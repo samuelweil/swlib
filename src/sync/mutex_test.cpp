@@ -6,6 +6,12 @@
 
 using namespace sweil::sync;
 
-TEST_CASE("Mutex constructor", "[all,sync,mutex]") {
-  const auto mutex = thread_safe<TestClass>();
+const auto LABELS = "[all,sync,mutex]";
+
+TEST_CASE("Default constructed mutex", LABELS) {
+  auto mutex = make_thread_safe<TestClass>();
+}
+
+TEST_CASE("Pass through constructed mutex") {
+  auto mutex = make_thread_safe<TestClass>(12);
 }
