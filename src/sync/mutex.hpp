@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <mutex>
+#include <shared_mutex>
 #include <stdexcept>
 
 namespace sweil {
@@ -15,15 +16,42 @@ auto make_thread_safe(Params&&...) -> Mutex<T>;
 
 template <typename T>
 class Mutex {
-  using ptr_t = std::shared_ptr<T>;
-  using mutex_t = std::shared_ptr<std::mutex>;
+  using value_ptr = std::shared_ptr<T>;
+  using mutex_t = std::shared_mutex;
+  using mutex_ptr = std::shared_ptr<mutex_t>;
+  using lock_t = std::unique_lock<mutex_t>;
 
  public:
-  Mutex(ptr_t&& ptr) : _ptr(ptr), _mutex(std::make_shared<std::mutex>()) {}
+  Mutex(value_ptr&& ptr) : _ptr(ptr), _mutex(std::make_shared<mutex_t>()) {}
+
+  class Lock {
+   public:
+    Lock(Lock&& lock)
+        : _value(std::move(lock._value)),
+          _lock_guard(std::move(lock._lock_guard)) {}
+
+    T* operator->() {
+      auto raw_value = _value.get();
+      return raw_value;
+    }
+
+    T& operator*() { return *_value; }
+
+   private:
+    Lock(value_ptr& value, mutex_t& mutex)
+        : _value(value), _lock_guard(mutex) {}
+
+    std::lock_guard<mutex_t> _lock_guard;
+    value_ptr _value;
+
+    friend class Mutex;
+  };
+
+  Lock lock() { return Lock(_ptr, *_mutex); }
 
  private:
-  ptr_t _ptr;
-  mutex_t _mutex;
+  value_ptr _ptr;
+  mutex_ptr _mutex;
 };
 
 template <typename T, typename... Params>

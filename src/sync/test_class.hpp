@@ -7,6 +7,11 @@ class TestClass {
 
   int value() const { return _value; }
 
+  TestClass& value(int new_val) {
+    _value = new_val;
+    return *this;
+  }
+
  private:
   int _value;
 };
