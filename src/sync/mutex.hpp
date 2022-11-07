@@ -16,48 +16,54 @@ auto make_thread_safe(Params&&...) -> Mutex<T>;
 
 template <typename T>
 class Mutex {
-  using value_ptr = std::shared_ptr<T>;
+  struct Container {
+    template <typename... Params>
+    Container(Params&&... params) : value(T(std::forward<Params>(params)...)) {}
+
+    T value;
+    std::shared_mutex mutex;
+  };
+
   using mutex_t = std::shared_mutex;
-  using mutex_ptr = std::shared_ptr<mutex_t>;
   using lock_t = std::unique_lock<mutex_t>;
+  using container_t = std::shared_ptr<Container>;
 
  public:
-  Mutex(value_ptr&& ptr) : _ptr(ptr), _mutex(std::make_shared<mutex_t>()) {}
+  template <typename... Params>
+  Mutex(Params&&... params)
+      : _container_ptr(
+            std::make_shared<Container>(std::forward<Params>(params)...)) {}
 
   class Lock {
    public:
-    Lock(Lock&& lock)
-        : _value(std::move(lock._value)),
-          _lock_guard(std::move(lock._lock_guard)) {}
+    T* operator->() { return &(_ref->value); }
+    T& operator*() { return _ref->value; }
 
-    T* operator->() {
-      auto raw_value = _value.get();
-      return raw_value;
-    }
-
-    T& operator*() { return *_value; }
+    ~Lock() = default;
 
    private:
-    Lock(value_ptr& value, mutex_t& mutex)
-        : _value(value), _lock_guard(mutex) {}
+    Lock(container_t& container) : _ref(container), _lock(container->mutex) {}
 
-    std::lock_guard<mutex_t> _lock_guard;
-    value_ptr _value;
+    Lock(const Lock&) = delete;
+    Lock(Lock&&) = default;
+
+    Lock& operator=(const Lock& lock) = delete;
+    Lock& operator=(Lock&& lock) = default;
+
+    container_t _ref;
+    lock_t _lock;
 
     friend class Mutex;
   };
 
-  Lock lock() { return Lock(_ptr, *_mutex); }
+  Lock lock() { return Lock(_container_ptr); }
 
- private:
-  value_ptr _ptr;
-  mutex_ptr _mutex;
+  container_t _container_ptr;
 };
 
 template <typename T, typename... Params>
 auto make_thread_safe(Params&&... params) -> Mutex<T> {
-  auto ptr = std::make_shared<T>(std::forward<Params>(params)...);
-  return Mutex<T>(std::move(ptr));
+  return Mutex<T>(std::forward<Params>(params)...);
 }
 
 }  // namespace sync
