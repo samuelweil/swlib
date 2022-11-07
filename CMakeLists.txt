@@ -1,15 +1,17 @@
 cmake_minimum_required(VERSION 3.16)
-project(RustLike)
 
-find_package(Catch2 3 REQUIRED)
+project(swlib)
 
-file(GLOB_RECURSE SOURCES src/*.cpp)
+set(LIB_FILES
+    include/sync/mutex.hpp
+)
 
-add_executable(tests ${SOURCES})
+add_library(swlib INTERFACE ${LIB_FILES})
+target_compile_features(swlib INTERFACE cxx_std_20)
 
-set_property(TARGET tests PROPERTY CXX_STANDARD 20)
+target_include_directories(swlib INTERFACE 
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
 
-include_directories(tests src)
-
-target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
-
+add_subdirectory(test)

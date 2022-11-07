@@ -17,7 +17,8 @@ RUN cd Catch2 && cmake -Bbuild -H. -DBUILD_TESTING=OFF && cmake --build build/ -
 
 WORKDIR /test
 
-COPY src src/
+COPY include/ include/
+COPY test/ test/
 COPY CMakeLists.txt .
 COPY makefile .
 

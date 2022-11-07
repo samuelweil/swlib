@@ -1,5 +1,5 @@
 BUILD_DIR=build
-TEST_EXE=$(BUILD_DIR)/tests
+TEST_EXE=$(BUILD_DIR)/test/unit_tests
 
 # -- Dev Commands --
 

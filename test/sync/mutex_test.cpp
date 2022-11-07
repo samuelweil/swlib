@@ -1,11 +1,11 @@
-#include "./mutex.hpp"
+#include <sync/mutex.hpp>
 
 #include <atomic>
 #include <chrono>
 #include <catch2/catch_test_macros.hpp>
 #include <thread>
 
-#include "./test_class.hpp"
+#include "../test_class.hpp"
 
 using namespace sweil::sync;
 using namespace std::chrono_literals;
