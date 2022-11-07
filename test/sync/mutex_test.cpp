@@ -12,25 +12,25 @@ using namespace std::chrono_literals;
 
 const auto LABELS = "[all,sync,mutex]";
 
-TEST_CASE("Default constructed mutex", LABELS) {
-  auto mutex = make_thread_safe<TestClass>();
+TEST_CASE("Default constructed mutex", LABELS) {  
+  REQUIRE_NOTHROW(make_thread_safe<TestClass>());
 }
 
 TEST_CASE("Pass through constructed mutex", LABELS) {
-  auto mutex = make_thread_safe<TestClass>(12);
+  REQUIRE_NOTHROW(make_thread_safe<TestClass>(12));
 }
 
 TEST_CASE("Access value through lock", LABELS) {
   auto mutex = make_thread_safe<TestClass>(13);
 
   auto lock = mutex.lock();
-  assert(lock->value() == 13);
+  REQUIRE(lock->value() == 13);
 
   *lock = TestClass(15);
-  assert(lock->value() == 15);
+  REQUIRE(lock->value() == 15);
 
   lock->value(123);
-  assert(lock->value() == 123);
+  REQUIRE(lock->value() == 123);
 }
 
 TEST_CASE("Prevent access when locked", LABELS) {

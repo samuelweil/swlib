@@ -1,0 +1,13 @@
+unit_tests:
+  image: ubuntu:22.04
+  script: 
+    - apt-get update && apt-get install -y clang make cmake git
+    - git clone https://github.com/catchorg/Catch2.git 
+    - pushd Catch2 && cmake -Bbuild -H. -DBUILD_TESTING=OFF && cmake --build build/ --target install && popd
+    - make
+  artifacts:
+    when: always
+    paths:
+      - build
+    reports:
+      junit: build/test/unit_test_results/*.xml
