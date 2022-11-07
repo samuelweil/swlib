@@ -14,4 +14,5 @@ target_include_directories(swlib INTERFACE
     $<INSTALL_INTERFACE:include>
 )
 
+enable_testing()
 add_subdirectory(test)

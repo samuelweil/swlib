@@ -4,7 +4,7 @@ TEST_EXE=$(BUILD_DIR)/test/unit_tests
 # -- Dev Commands --
 
 tests: $(TEST_EXE)
-	$(TEST_EXE)
+	cd $(BUILD_DIR) && ctest
 
 clean:
 	rm -rf $(BUILD_DIR)
