@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <mutex>
+#include <shared_mutex>
 #include <stdexcept>
 
 namespace sweil {
@@ -15,21 +16,54 @@ auto make_thread_safe(Params&&...) -> Mutex<T>;
 
 template <typename T>
 class Mutex {
-  using ptr_t = std::shared_ptr<T>;
-  using mutex_t = std::shared_ptr<std::mutex>;
+  struct Container {
+    template <typename... Params>
+    Container(Params&&... params) : value(T(std::forward<Params>(params)...)) {}
+
+    T value;
+    std::shared_mutex mutex;
+  };
+
+  using mutex_t = std::shared_mutex;
+  using lock_t = std::unique_lock<mutex_t>;
+  using container_t = std::shared_ptr<Container>;
 
  public:
-  Mutex(ptr_t&& ptr) : _ptr(ptr), _mutex(std::make_shared<std::mutex>()) {}
+  template <typename... Params>
+  Mutex(Params&&... params)
+      : _container_ptr(
+            std::make_shared<Container>(std::forward<Params>(params)...)) {}
 
- private:
-  ptr_t _ptr;
-  mutex_t _mutex;
+  class Lock {
+   public:
+    T* operator->() { return &(_ref->value); }
+    T& operator*() { return _ref->value; }
+
+    ~Lock() = default;
+
+   private:
+    Lock(container_t& container) : _ref(container), _lock(container->mutex) {}
+
+    Lock(const Lock&) = delete;
+    Lock(Lock&&) = default;
+
+    Lock& operator=(const Lock& lock) = delete;
+    Lock& operator=(Lock&& lock) = default;
+
+    container_t _ref;
+    lock_t _lock;
+
+    friend class Mutex;
+  };
+
+  Lock lock() { return Lock(_container_ptr); }
+
+  container_t _container_ptr;
 };
 
 template <typename T, typename... Params>
 auto make_thread_safe(Params&&... params) -> Mutex<T> {
-  auto ptr = std::make_shared<T>(std::forward<Params>(params)...);
-  return Mutex<T>(std::move(ptr));
+  return Mutex<T>(std::forward<Params>(params)...);
 }
 
 }  // namespace sync
